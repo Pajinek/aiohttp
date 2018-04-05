@@ -272,6 +272,7 @@ class Application(MutableMapping):
 
         Should be called after shutdown()
         """
+        await self._cleanup_middleware()
         await self.on_cleanup.send(self)
 
     def _make_request(self, message, payload, protocol, writer, task,
@@ -329,6 +330,11 @@ class Application(MutableMapping):
                   for app in match_info.apps
                   for middleware in app.middlewares])
         return resp
+
+    async def _cleanup_middleware(self):
+        for m in self._middlewares:
+            if hasattr(m, "cleanup"):
+                await m.cleanup()
 
     def __call__(self):
         """gunicorn compatibility"""
